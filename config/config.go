@@ -1,6 +1,10 @@
 package config
 
 import (
+	"github.com/kevslinger/funda-scraper/alerter"
+	"github.com/kevslinger/funda-scraper/database"
+	"github.com/kevslinger/funda-scraper/scraper"
+	"github.com/naoina/toml"
 	"github.com/urfave/cli/v2"
 )
 
@@ -11,20 +15,14 @@ var (
 	}
 )
 
-/*
-We need configs for the following modules:
+var tomlSettings = toml.Config{}
 
-Alerter:
--
+type Config struct {
+	AlerterConfig  alerter.Config
+	DatabaseConfig database.Config
+	ScraperConfig  scraper.Config
+}
 
-Database:
--
-
-Scraper:
--
-
-Main:
--
-
-
-*/
+func LoadConfig() Config {
+	return Config{}
+}

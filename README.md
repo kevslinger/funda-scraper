@@ -49,7 +49,7 @@ DB table will have the following columns:
 - Kind of house (e.g. woonbouw, appartement)
 - Building type 
 - Number of rooms
-- Number of bathrooms
+- Number of bedrooms
 - Layout (what)
 - Energy Label
 - Insulation (what)

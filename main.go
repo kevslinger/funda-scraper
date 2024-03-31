@@ -1,19 +1,44 @@
 package main
 
-func main() {
+import (
+	"io"
+	"log"
+	"net/http"
+	"os"
 
+	"github.com/kevslinger/funda-scraper/alerter"
+	"github.com/kevslinger/funda-scraper/scraper"
+	"github.com/urfave/cli/v2"
+)
+
+func main() {
+	app := &cli.App{
+		Flags:  append(scraper.Flags, alerter.Flags...),
+		Action: scrapeFunda,
+	}
+
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
 }
 
-/*
-Main is going to be responsible for loading in the config,
-starting up the components, and running the application.
+func scrapeFunda(ctx *cli.Context) error {
+	// TODO: Should New take in the actual values instead of a Config object?
+	fundaScraper := scraper.New(*scraper.Defaults, &http.Client{})
+	resp, err := fundaScraper.Request(http.MethodGet, ctx.String("listing-path"), nil)
+	if err != nil {
+		log.Fatalf("Error %e", err)
+	}
+	_, err = io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Error with reading Body: %e", err)
+	}
+	// TODO: Parse values of the house and store in a DB
 
-Component hierarchy:
-Config depends on: nothing
-Alerter depends on: config
-Database depends on: config
-Scraper depends on: config, database, alerter
-main depends on: config, database, alerter, scraper
-
-The scraper will maintain the flow of the application
-*/
+	alerts, err := alerter.New(alerter.Config{DiscordAuthenticationToken: ctx.String("discord-auth-token"), DiscordChannelID: ctx.String("discord-channel-id")})
+	if err != nil {
+		log.Fatalf("Error with creating Alerter: %e", err)
+	}
+	alerts.Alert("Found a new house at https://funda.nl/" + ctx.String("listing-path"))
+	return nil
+}
