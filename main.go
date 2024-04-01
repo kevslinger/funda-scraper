@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/kevslinger/funda-scraper/alerter"
+	"github.com/kevslinger/funda-scraper/config"
 	"github.com/kevslinger/funda-scraper/scraper"
 	"github.com/urfave/cli/v2"
 )
@@ -23,8 +24,8 @@ func main() {
 }
 
 func scrapeFunda(ctx *cli.Context) error {
-	// TODO: Should New take in the actual values instead of a Config object?
-	fundaScraper := scraper.New(*scraper.Defaults, &http.Client{})
+	config := config.LoadConfig(ctx)
+	fundaScraper := scraper.New(*config.ScraperConfig, &http.Client{})
 	resp, err := fundaScraper.Request(http.MethodGet, ctx.String("listing-path"), nil)
 	if err != nil {
 		log.Fatalf("Error %e", err)

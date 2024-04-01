@@ -22,3 +22,15 @@ var Flags []cli.Flag = []cli.Flag{
 		Usage: "The channel ID of the Discord channel to alert",
 	},
 }
+
+// TODO: Better way to set Config vars from context?
+func LoadConfig(ctx *cli.Context) *Config {
+	config := Defaults
+	if ctx.IsSet("discord-auth-token") {
+		config.DiscordAuthenticationToken = ctx.String("discord-auth-token")
+	}
+	if ctx.IsSet("discord-channel-id") {
+		config.DiscordChannelID = ctx.String("discord-channel-id")
+	}
+	return config
+}

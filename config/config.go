@@ -18,11 +18,15 @@ var (
 var tomlSettings = toml.Config{}
 
 type Config struct {
-	AlerterConfig  alerter.Config
-	DatabaseConfig database.Config
-	ScraperConfig  scraper.Config
+	AlerterConfig  *alerter.Config
+	DatabaseConfig *database.Config
+	ScraperConfig  *scraper.Config
 }
 
-func LoadConfig() Config {
-	return Config{}
+func LoadConfig(ctx *cli.Context) Config {
+	return Config{
+		AlerterConfig:  alerter.LoadConfig(ctx),
+		DatabaseConfig: database.LoadConfig(ctx),
+		ScraperConfig:  scraper.LoadConfig(ctx),
+	}
 }

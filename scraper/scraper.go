@@ -22,9 +22,9 @@ func New(config Config, client *http.Client) *Scraper {
 }
 
 func (s Scraper) Request(requestType, path string, body io.Reader) (*http.Response, error) {
-	fullPath, err := url.JoinPath(s.config.base_url, path)
+	fullPath, err := url.JoinPath(s.config.baseUrl, path)
 	if err != nil {
-		return &http.Response{}, fmt.Errorf("error joining paths %s and %s: %e", s.config.base_url, path, err)
+		return &http.Response{}, fmt.Errorf("error joining paths %s and %s: %e", s.config.baseUrl, path, err)
 	}
 	req, err := http.NewRequest(requestType, fullPath, body)
 	if err != nil {

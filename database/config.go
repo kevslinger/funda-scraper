@@ -1,5 +1,7 @@
 package database
 
+import "github.com/urfave/cli/v2"
+
 type Config struct {
 	host     string
 	port     int
@@ -9,3 +11,7 @@ type Config struct {
 }
 
 var Defaults *Config = &Config{}
+
+func LoadConfig(ctx *cli.Context) *Config {
+	return Defaults
+}
