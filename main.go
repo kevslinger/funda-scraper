@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -14,7 +13,7 @@ import (
 
 func main() {
 	app := &cli.App{
-		Flags:  append(scraper.Flags, alerter.Flags...),
+		Flags:  getFlags(),
 		Action: scrapeFunda,
 	}
 
@@ -26,20 +25,30 @@ func main() {
 func scrapeFunda(ctx *cli.Context) error {
 	config := config.LoadConfig(ctx)
 	fundaScraper := scraper.New(*config.ScraperConfig, &http.Client{})
-	resp, err := fundaScraper.Request(http.MethodGet, ctx.String("listing-path"), nil)
+	urls, err := fundaScraper.GetListingUrls(http.MethodGet, nil)
 	if err != nil {
-		log.Fatalf("Error %e", err)
+		return err
 	}
-	_, err = io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("Error with reading Body: %e", err)
-	}
-	// TODO: Parse values of the house and store in a DB
-
 	alerts, err := alerter.New(alerter.Config{DiscordAuthenticationToken: ctx.String("discord-auth-token"), DiscordChannelID: ctx.String("discord-channel-id")})
 	if err != nil {
-		log.Fatalf("Error with creating Alerter: %e", err)
+		return err
 	}
-	alerts.Alert("Found a new house at https://funda.nl/" + ctx.String("listing-path"))
+	for _, url := range urls[:config.GeneralConfig.NumHousesLimit] {
+		alerts.Alert("Found a new house at " + url)
+	}
+	// fundaListings, err := fundaScraper.ParseResponse(response)
+	// if err != nil {
+	// 	return err
+	// }
+	// for _, listing := range fundaListings {
+	// 	alerts.Alert("Found a new house at " + listing.URL)
+	// }
 	return nil
+}
+
+func getFlags() []cli.Flag {
+	var flags []cli.Flag
+	flags = append(scraper.Flags, config.Flags...)
+	flags = append(flags, alerter.Flags...)
+	return flags
 }
