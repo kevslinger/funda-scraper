@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/gocolly/colly"
 )
@@ -50,17 +49,28 @@ func (s Scraper) configureUrl() (string, error) {
 		return "", fmt.Errorf("error joining paths %s and %s: %e", s.config.baseUrl, s.config.koopOrHuur, err)
 	}
 	path += "?"
-	if s.config.area != nil {
-		path += fmt.Sprintf("selected_area=[\"%s\"]", strings.Join(s.config.area, "\",\""))
-	}
+	path += s.getPathComponentForStringSlice(s.config.area, "selected_area")
+	path += s.getPathComponentForIntRange(s.config.minPrice, s.config.maxPrice, "&price")
+	path += s.getPathComponentForIntRange(s.config.minLivingArea, s.config.maxLivingArea, "&floor_area")
+	path += s.getPathComponentForIntRange(s.config.minPlotArea, s.config.maxPlotArea, "&plot_area")
+	path += s.getPathComponentForIntRange(s.config.minRooms, s.config.maxRooms, "&rooms")
+	path += s.getPathComponentForIntRange(s.config.minBedrooms, s.config.maxBedrooms, "&bedrooms")
+	path += s.getPathComponentForStringSlice(s.config.energyLabel, "&energy_label")
+	path += s.getPathComponentForStringSlice(s.config.outdoorAmenities, "&exterior_space_type")
+	path += s.getPathComponentForStringSlice(s.config.gardenDirection, "&exterior_space_garden_orientation")
+	path += s.getPathComponentForIntRange(s.config.gardenMinSpace, s.config.gardenMaxSpace, "&exterior_space_garden_size")
+	path += s.getPathComponentForStringSlice(s.config.buildingType, "&construction_type")
+	path += s.getPathComponentForStringSlice(s.config.zoning, "zoning")
+	path += s.getPathComponentForStringSlice(s.config.constructionPeriod, "&construction_period")
+	path += s.getPathComponentForStringSlice(s.config.surroundings, "&surrounding")
+	path += s.getPathComponentForStringSlice(s.config.garage, "&garage_type")
+	path += s.getPathComponentForIntRange(s.config.minGarageCapacity, s.config.maxGarageCapacity, "&garage_capacity")
+	path += s.getPathComponentForStringSlice(s.config.characteristics, "&amenities")
+	path += s.getPathComponentForStringSlice(s.config.display, "&type")
+	path += s.getPathComponentForStringSlice(s.config.openHouse, "&open_house")
 
-	path += s.getPathComponentForIntRange(s.config.minPrice, s.config.maxPrice, "price")
-	path += s.getPathComponentForIntRange(s.config.minLivingArea, s.config.maxLivingArea, "floor_area")
-	path += s.getPathComponentForIntRange(s.config.minPlotArea, s.config.maxPlotArea, "plot_area")
-	path += s.getPathComponentForIntRange(s.config.minRooms, s.config.maxRooms, "rooms")
-	path += s.getPathComponentForIntRange(s.config.minBedrooms, s.config.maxBedrooms, "bedrooms")
-	// TODO: Add more arguments
-
+	// TODO: Choose other sort methods?
+	path += "&sort=\"date_down\""
 	log.Print("Full path is ", "path=", path)
 	return path, nil
 }
@@ -69,7 +79,7 @@ func (s Scraper) getPathComponentForIntRange(lower, upper int, componentName str
 	if lower == 0 && upper == 0 {
 		return ""
 	}
-	path := fmt.Sprintf("&%s=\"", componentName)
+	path := fmt.Sprintf("%s=\"", componentName)
 	if lower != 0 {
 		path += fmt.Sprint(lower)
 	}
@@ -79,6 +89,22 @@ func (s Scraper) getPathComponentForIntRange(lower, upper int, componentName str
 	}
 	return path + "\""
 }
+
+func (s Scraper) getPathComponentForStringSlice(values []string, componentName string) string {
+	if len(values) <= 0 {
+		return ""
+	}
+	path := fmt.Sprintf("%s=[", componentName)
+	for i, value := range values {
+		// Replaces + in energy label with %2B
+		path += "\"" + url.QueryEscape(value) + "\""
+		if i < len(values)-1 {
+			path += ","
+		}
+	}
+	return path + "]"
+}
+
 func (s Scraper) getUrlsFromRequest(fullPath, requestType string, body io.Reader) ([]string, error) {
 	var urls []string
 	s.collector.OnHTML("script", func(e *colly.HTMLElement) {

@@ -27,6 +27,13 @@ type Config struct {
 	buildingType       []string
 	zoning             []string
 	constructionPeriod []string
+	surroundings       []string
+	garage             []string
+	minGarageCapacity  int
+	maxGarageCapacity  int
+	characteristics    []string
+	display            []string
+	openHouse          []string
 }
 
 const (
@@ -52,6 +59,13 @@ const (
 	buildingTypeFlag       = "building-type"
 	zoningFlag             = "zoning"
 	constructionPeriodFlag = "construction-period"
+	surroundingsFlag       = "surroundings"
+	garageFlag             = "garage"
+	minGarageCapacityFlag  = "min-garage-capacity"
+	maxGarageCapacityFlag  = "max-garage-capacity"
+	characteristicsFlag    = "characteristics"
+	displayFlag            = "display"
+	openHouseFlag          = "open-house"
 )
 
 var Defaults *Config = &Config{
@@ -61,6 +75,7 @@ var Defaults *Config = &Config{
 	area:       []string{"nl"},
 }
 
+// TODO: Translate the options to those used in the URL
 var Flags []cli.Flag = []cli.Flag{
 	&cli.StringFlag{
 		Name:  baseUrlFlag,
@@ -148,7 +163,34 @@ var Flags []cli.Flag = []cli.Flag{
 		Name:  constructionPeriodFlag,
 		Usage: "Use this to filter houses based on when they were built. Options: 'Voor 1906', '1906-1930', '1931-1944', '1945-1959', '1960-1970', '1971-1980', '1981-1990', '1991-2000', '2001-2010', 2011-2020', 'Onbekend', 'Na 2020'",
 	},
-	// TODO: Add Ligging, Garage, Garagecapaciteit, Eigenschappen, Weergave, Open Huis
+	&cli.StringSliceFlag{
+		Name:  surroundingsFlag,
+		Usage: "Use this to filter houses based on what you would like surrounding your house. Options: 'Aan bosrand', 'Aan water', 'In centrum', 'In bosrijke omgeving', 'In woonwijk', 'Aan drukke weg', 'Aan vaarwater', 'Aan rustige weg', 'Open ligging', 'Buiten bebouwde kom', 'Aan park', 'Landelijk gelegen', 'Beschutte ligging', 'Vrij uitzicht'",
+	},
+	&cli.StringSliceFlag{
+		Name:  garageFlag,
+		Usage: "Use this to filter houses based on what type of garage is desired. Options: 'Souterrain', 'Inpandige garage', 'Vrijstaande garage', 'Garage + Carport', 'Aangebouwde garage', 'Garagebox', 'Parkeerkelder'",
+	},
+	&cli.IntFlag{
+		Name:  minGarageCapacityFlag,
+		Usage: "Use this to filter houses based on the minimum desired garage capacity",
+	},
+	&cli.IntFlag{
+		Name:  maxGarageCapacityFlag,
+		Usage: "Use this to filter houses based on the maximum desired garage capacity",
+	},
+	&cli.StringSliceFlag{
+		Name:  characteristicsFlag,
+		Usage: "Use this to filter houses based on certain characteristics. Options: 'Lig-/zitbad', 'CV-ketel', 'Dubbele bewoning', 'Open haard', 'Kluswoning', 'Duurzame energie', 'Zwembad'",
+	},
+	&cli.StringSliceFlag{
+		Name:  displayFlag,
+		Usage: "Use this to filter houses based on display. Options: 'Projecten', 'Woningen'",
+	},
+	&cli.StringSliceFlag{
+		Name:  openHouseFlag,
+		Usage: "Use this to filter houses based on open house. Options: 'Alle open huizen', 'Komend weekend', 'Vandaag'",
+	},
 }
 
 func LoadConfig(ctx *cli.Context) *Config {
@@ -215,6 +257,27 @@ func LoadConfig(ctx *cli.Context) *Config {
 	}
 	if ctx.IsSet(constructionPeriodFlag) {
 		config.constructionPeriod = ctx.StringSlice(constructionPeriodFlag)
+	}
+	if ctx.IsSet(surroundingsFlag) {
+		config.surroundings = ctx.StringSlice(surroundingsFlag)
+	}
+	if ctx.IsSet(garageFlag) {
+		config.garage = ctx.StringSlice(garageFlag)
+	}
+	if ctx.IsSet(minGarageCapacityFlag) {
+		config.minGarageCapacity = ctx.Int(minGarageCapacityFlag)
+	}
+	if ctx.IsSet(maxGarageCapacityFlag) {
+		config.maxGarageCapacity = ctx.Int(maxGarageCapacityFlag)
+	}
+	if ctx.IsSet(characteristicsFlag) {
+		config.characteristics = ctx.StringSlice(characteristicsFlag)
+	}
+	if ctx.IsSet(displayFlag) {
+		config.display = ctx.StringSlice(displayFlag)
+	}
+	if ctx.IsSet(openHouseFlag) {
+		config.openHouse = ctx.StringSlice(openHouseFlag)
 	}
 	return config
 }
