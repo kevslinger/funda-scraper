@@ -11,14 +11,19 @@ type Config struct {
 
 var Defaults *Config = &Config{}
 
+const (
+	discordAuthFlag  = "discord-auth-token"
+	discordChannelID = "discord-channel-id"
+)
+
 var Flags []cli.Flag = []cli.Flag{
 	&cli.StringFlag{
-		Name:  "discord-auth-token",
+		Name:  discordAuthFlag,
 		Usage: "The authentication token for a discord bot",
 	},
 	// TODO: Support multiple channels?
 	&cli.StringFlag{
-		Name:  "discord-channel-id",
+		Name:  discordChannelID,
 		Usage: "The channel ID of the Discord channel to alert",
 	},
 }
@@ -26,11 +31,11 @@ var Flags []cli.Flag = []cli.Flag{
 // TODO: Better way to set Config vars from context?
 func LoadConfig(ctx *cli.Context) *Config {
 	config := Defaults
-	if ctx.IsSet("discord-auth-token") {
-		config.DiscordAuthenticationToken = ctx.String("discord-auth-token")
+	if ctx.IsSet(discordAuthFlag) {
+		config.DiscordAuthenticationToken = ctx.String(discordAuthFlag)
 	}
-	if ctx.IsSet("discord-channel-id") {
-		config.DiscordChannelID = ctx.String("discord-channel-id")
+	if ctx.IsSet(discordChannelID) {
+		config.DiscordChannelID = ctx.String(discordChannelID)
 	}
 	return config
 }

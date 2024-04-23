@@ -5,6 +5,7 @@ go 1.21.6
 require (
 	github.com/bwmarrin/discordgo v0.27.1
 	github.com/gocolly/colly v1.2.0
+	github.com/jasonlvhit/gocron v0.0.1
 	github.com/naoina/toml v0.1.1
 	github.com/urfave/cli/v2 v2.27.1
 )

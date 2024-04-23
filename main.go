@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/jasonlvhit/gocron"
 	"github.com/kevslinger/funda-scraper/alerter"
 	"github.com/kevslinger/funda-scraper/config"
 	"github.com/kevslinger/funda-scraper/scraper"
@@ -14,7 +15,7 @@ import (
 func main() {
 	app := &cli.App{
 		Flags:  getFlags(),
-		Action: scrapeFunda,
+		Action: daemon,
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -22,14 +23,21 @@ func main() {
 	}
 }
 
-func scrapeFunda(ctx *cli.Context) error {
+func daemon(ctx *cli.Context) error {
 	config := config.LoadConfig(ctx)
+	gocron.Every(config.GeneralConfig.ScrapeFrequency).Minutes().Do(scrapeFunda, config)
+	<-gocron.Start()
+	return nil
+}
+
+func scrapeFunda(config config.Config) error {
+
 	fundaScraper := scraper.New(*config.ScraperConfig, &http.Client{})
 	urls, err := fundaScraper.GetListingUrls(http.MethodGet, nil)
 	if err != nil {
 		return err
 	}
-	alerts, err := alerter.New(alerter.Config{DiscordAuthenticationToken: ctx.String("discord-auth-token"), DiscordChannelID: ctx.String("discord-channel-id")})
+	alerts, err := alerter.New(alerter.Config{DiscordAuthenticationToken: config.AlerterConfig.DiscordAuthenticationToken, DiscordChannelID: config.AlerterConfig.DiscordChannelID})
 	if err != nil {
 		return err
 	}
