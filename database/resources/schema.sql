@@ -1,11 +1,11 @@
 CREATE TABLE funda_houses (
-    time_seen           DATETIME,
-    link                TEXT,
+    time_seen           TIMESTAMP,
+    link                TEXT PRIMARY KEY,
     house_id            INT,
     house_address       VARCHAR(256),
     price               INT,
     house_description   TEXT,
-    listed_since        DATETIME,
+    listed_since        TIMESTAMP,
     zip_code            VARCHAR(6),
     built_year          INT,
     total_size          INT,
@@ -22,10 +22,12 @@ CREATE TABLE funda_houses (
     exteriors           VARCHAR(256),
     parking             VARCHAR(256),
     neighbourhood_name  VARCHAR(256),
-    date_listed         DATETIME,
-    date_sold           DATETIME,
+    date_listed         TIMESTAMP,
+    date_sold           TIMESTAMP,
     term                INT,
     price_sold          INT,
     last_ask_price      INT,
     last_ask_price_m2   INT
 );
+
+SELECT * FROM funda_houses;

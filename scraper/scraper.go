@@ -22,11 +22,6 @@ type Scraper struct {
 	config    Config
 }
 
-type FundaListing struct {
-	URL     string
-	Address string
-}
-
 func New(config Config, client *http.Client) *Scraper {
 	collector := colly.NewCollector()
 	scraper := &Scraper{
@@ -72,6 +67,11 @@ func New(config Config, client *http.Client) *Scraper {
 	})
 	scraper.collector.OnHTML("body", func(e *colly.HTMLElement) {
 		recentListing.Address = e.ChildText(".object-header__title")
+		recentListing.Description = e.ChildText(".object-description-body")
+		recentListing.ListedSince = e.ChildText(".fd-align-items-center:nth-child(6) span")
+		recentListing.ZipCode = e.ChildText(".object-header__subtitle")
+		recentListing.HouseType = e.ChildText(".object-kenmerken-list:nth-child(5) .fd-align-items-center:nth-child(2) span")
+		recentListing.BuildingType = e.ChildText(".object-kenmerken-list:nth-child(5) .fd-align-items-center:nth-child(4) span")
 		// TODO: Add more fields
 	})
 
@@ -157,7 +157,7 @@ func (s Scraper) getUrlsFromRequest(fullPath, requestType string, body io.Reader
 	return urlQueue, nil
 }
 
-// TODO:
+// TODO: Add more fields
 func (s Scraper) GetFundaListingFromUrl(url string) (FundaListing, error) {
 	err := s.collector.Visit(url)
 	if err != nil {
