@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/kevslinger/funda-scraper/scraper"
@@ -61,7 +62,21 @@ func (d Database) InsertListings(listings []scraper.FundaListing) error {
 		defer tx.Rollback(context.Background())
 
 		// TODO: Is this weak against SQL injection?
-		_, err = tx.Exec(context.Background(), fmt.Sprintf("insert into funda_houses(link, house_address, house_description) values ('%s', '%s', '%s')", escapeStringForQuery(listing.URL), escapeStringForQuery(listing.Address), escapeStringForQuery(listing.Description)))
+		_, err = tx.Exec(context.Background(), fmt.Sprintf("insert into funda_houses(time_seen, link, house_address, price, house_description, zip_code, built_year, total_size, living_size, house_type, building_type, num_rooms, num_bedrooms) values ('%s', '%s', '%s', '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%d', '%d')",
+			time.Now().UTC().Format(time.RFC822),
+			escapeStringForQuery(listing.URL),
+			escapeStringForQuery(listing.Address),
+			listing.Price,
+			escapeStringForQuery(listing.Description),
+			escapeStringForQuery(listing.ZipCode),
+			listing.BuildYear,
+			listing.TotalSize,
+			listing.LivingSize,
+			escapeStringForQuery(listing.HouseType),
+			escapeStringForQuery(listing.BuildingType),
+			listing.NumRooms,
+			listing.NumBedrooms),
+		)
 		if err != nil {
 			return err
 		}
@@ -70,7 +85,6 @@ func (d Database) InsertListings(listings []scraper.FundaListing) error {
 		if err != nil {
 			return err
 		}
-		log.Print("Committed house with Address: ", listing.Address)
 	}
 	return nil
 }

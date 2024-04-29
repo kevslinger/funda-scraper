@@ -6,7 +6,7 @@ CREATE TABLE funda_houses (
     price               INT,
     house_description   TEXT,
     listed_since        TIMESTAMP,
-    zip_code            VARCHAR(6),
+    zip_code            VARCHAR(256),
     built_year          INT,
     total_size          INT,
     living_size         INT,
@@ -15,7 +15,7 @@ CREATE TABLE funda_houses (
     num_rooms           INT,
     num_bedrooms        INT,
     layout              VARCHAR(256),
-    energy_label        VARCHAR(8),
+    energy_label        VARCHAR(256),
     insulation          VARCHAR(256),
     heating             VARCHAR(256),
     ownership_type      VARCHAR(256),
@@ -29,5 +29,3 @@ CREATE TABLE funda_houses (
     last_ask_price      INT,
     last_ask_price_m2   INT
 );
-
-SELECT * FROM funda_houses;

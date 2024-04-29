@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strconv"
 
 	"github.com/gocolly/colly"
 )
@@ -67,17 +69,23 @@ func New(config Config, client *http.Client) *Scraper {
 	})
 	scraper.collector.OnHTML("body", func(e *colly.HTMLElement) {
 		recentListing.Address = e.ChildText(".object-header__title")
+		recentListing.Price = convertStrToInt(e.ChildText(".object-header__price"))
 		recentListing.Description = e.ChildText(".object-description-body")
-		recentListing.ListedSince = e.ChildText(".fd-align-items-center:nth-child(6) span")
 		recentListing.ZipCode = e.ChildText(".object-header__subtitle")
+		recentListing.BuildYear = convertStrToInt(e.ChildText(".fd-align-items-center~ .fd-align-items-center .fd-m-right-xs"))
+		recentListing.TotalSize = convertStrToInt(e.ChildText(".fd-m-right-xl--bp-m .fd-text--nowrap"))
+		recentListing.LivingSize = convertStrToInt(e.ChildText(".object-kenmerken-list:nth-child(8) .fd-align-items-center:nth-child(2) span"))
 		recentListing.HouseType = e.ChildText(".object-kenmerken-list:nth-child(5) .fd-align-items-center:nth-child(2) span")
 		recentListing.BuildingType = e.ChildText(".object-kenmerken-list:nth-child(5) .fd-align-items-center:nth-child(4) span")
+		recentListing.NumRooms = convertStrToInt(e.ChildText(".object-kenmerken-list:nth-child(11) .fd-align-items-center:nth-child(2)"))
+		recentListing.NumBedrooms = convertStrToInt(e.ChildText(".kenmerken-highlighted__value .fd-text--nowrap"))
 		// TODO: Add more fields
 	})
 
 	return scraper
 }
 
+// TODO: Get multiple pages of listings
 func (s Scraper) GetListingUrls(requestType string, body io.Reader) ([]string, error) {
 	urlPath, err := s.configureUrl()
 	if err != nil {
@@ -165,4 +173,14 @@ func (s Scraper) GetFundaListingFromUrl(url string) (FundaListing, error) {
 	}
 	recentListing.URL = url
 	return *recentListing, nil
+}
+
+func convertStrToInt(in string) int {
+	reg, _ := regexp.Compile("[^0-9]+")
+	numStr := reg.ReplaceAllString(in, "")
+	num, err := strconv.Atoi(numStr)
+	if err != nil {
+		return -1
+	}
+	return num
 }

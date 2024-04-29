@@ -26,14 +26,17 @@ func main() {
 
 func daemon(ctx *cli.Context) error {
 	config := config.LoadConfig(ctx)
-	gocron.Every(config.GeneralConfig.ScrapeFrequency).Minutes().Do(scrapeFunda, config)
+	fundaScraper := scraper.New(*config.ScraperConfig, &http.Client{})
+	alerts, err := alerter.New(alerter.Config{DiscordAuthenticationToken: config.AlerterConfig.DiscordAuthenticationToken, DiscordChannelID: config.AlerterConfig.DiscordChannelID})
+	if err != nil {
+		return err
+	}
+	gocron.Every(config.GeneralConfig.ScrapeFrequency).Minutes().Do(scrapeFunda, fundaScraper, alerts, config)
 	<-gocron.Start()
 	return nil
 }
 
-func scrapeFunda(config config.Config) error {
-
-	fundaScraper := scraper.New(*config.ScraperConfig, &http.Client{})
+func scrapeFunda(fundaScraper *scraper.Scraper, alerts *alerter.Alerter, config config.Config) error {
 	urls, err := fundaScraper.GetListingUrls(http.MethodGet, nil)
 	if err != nil {
 		return err
@@ -46,15 +49,10 @@ func scrapeFunda(config config.Config) error {
 			log.Print("Error getting Funda Listing for house with URL ", url)
 			continue
 		}
-		//log.Print("Funda listing created: ", fundaListing)
 		fundaListings = append(fundaListings, fundaListing)
 	}
 	// TODO: Check with DB to see which listings need to be inserted/alerted
 
-	alerts, err := alerter.New(alerter.Config{DiscordAuthenticationToken: config.AlerterConfig.DiscordAuthenticationToken, DiscordChannelID: config.AlerterConfig.DiscordChannelID})
-	if err != nil {
-		return err
-	}
 	for _, listing := range fundaListings[:config.GeneralConfig.NumHousesLimit] {
 		alerts.Alert("Found a new house at " + listing.Address + ": " + listing.URL)
 	}
@@ -67,6 +65,8 @@ func scrapeFunda(config config.Config) error {
 	err = db.InsertListings(fundaListings)
 	if err != nil {
 		log.Print("Error inserting listings: ", err)
+	} else {
+		log.Print("Committed %d new listings to DB", len(fundaListings))
 	}
 	return err
 }
