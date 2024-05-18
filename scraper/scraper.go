@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -52,18 +52,19 @@ func New(config Config, client *http.Client) *Scraper {
 		elemSlice, ok := elem.([]any)
 		if !ok {
 			// TODO: Better print format?
-			log.Fatalf("error with type assertion. HTML element=%#v", elem)
+			slog.Error("HTML Element type assertion error", "HTML element", elem)
+			return
 		}
 		for _, e := range elemSlice {
 			eMap, ok := e.(map[string]any)
 			if !ok {
-				log.Fatalf("error with type assertion. HTML element=%#v", e)
+				slog.Error("HTML Element type assertion error", "HTML element", e)
+				return
 			}
 			url, ok := eMap["url"]
 			if !ok {
 				return
 			}
-			log.Print(url)
 			urlQueue = append(urlQueue, url.(string))
 		}
 	})
@@ -123,7 +124,7 @@ func (s Scraper) configureUrl() (string, error) {
 
 	// TODO: Choose other sort methods?
 	path += "&sort=\"date_down\""
-	log.Print("Full search path is ", "path=", path)
+	slog.Info("Full search path is", "path", path)
 	return path, nil
 }
 

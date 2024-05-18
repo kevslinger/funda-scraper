@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -15,7 +15,7 @@ type Database struct {
 	config Config
 }
 
-func NewDatabase(config Config) Database {
+func New(config Config) Database {
 	return Database{
 		config: config,
 	}
@@ -26,71 +26,76 @@ func (d Database) SelectHouses() error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close(context.Background())
+	defer conn.Close(context.TODO())
 
 	listing := scraper.FundaListing{}
-	err = conn.QueryRow(context.Background(), "SELECT link, house_address, house_description FROM funda_houses").Scan(&listing.URL, &listing.Address, &listing.Description)
+	err = conn.QueryRow(context.TODO(), "SELECT link, house_address, house_description FROM funda_houses").Scan(&listing.URL, &listing.Address, &listing.Description)
 	if err != nil {
 		return err
 	}
-	log.Print(listing)
+	slog.Info("TEST from DB got ", "listing", listing)
 	return err
 }
 
-func (d Database) selectHouseWithLink(link string, conn *pgx.Conn) (string, error) {
+func (d Database) SelectHouseWithLink(link string) (string, error) {
+	conn, err := d.connect()
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close(context.TODO())
 	var foundLink string
-	err := conn.QueryRow(context.Background(), "SELECT link from funda_houses WHERE link=$1", link).Scan(&foundLink)
+	err = conn.QueryRow(context.TODO(), "SELECT link from funda_houses WHERE link=$1", link).Scan(&foundLink)
 	return foundLink, err
 }
 
-func (d Database) InsertListings(listings []scraper.FundaListing) error {
+func (d Database) SelectHouseWithAddress(address string) (string, error) {
+	conn, err := d.connect()
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close(context.TODO())
+
+	var foundAddress string
+	err = conn.QueryRow(context.TODO(), "SELECT house_address from funda_houses WHERE house_address=$1", address).Scan(&foundAddress)
+	return foundAddress, err
+}
+
+func (d Database) InsertListings(listings []scraper.FundaListing) (int, error) {
 	// TODO: Try CopyFrom https://github.com/jackc/pgx/blob/v5.5.5/copy_from.go#L265
 	conn, err := d.connect()
 	if err != nil {
-		return err
+		return 0, err
 	}
-	defer conn.Close(context.Background())
-	for _, listing := range listings {
-		foundLink, _ := d.selectHouseWithLink(listing.URL, conn)
-		if foundLink == listing.URL {
-			continue
-		}
-		tx, err := conn.Begin(context.Background())
-		if err != nil {
-			return err
-		}
-		defer tx.Rollback(context.Background())
+	defer conn.Close(context.TODO())
 
-		// TODO: Is this weak against SQL injection?
-		_, err = tx.Exec(context.Background(), fmt.Sprintf("insert into funda_houses(time_seen, link, house_address, price, house_description, zip_code, built_year, total_size, living_size, house_type, building_type, num_rooms, num_bedrooms) values ('%s', '%s', '%s', '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%d', '%d')",
-			time.Now().UTC().Format(time.RFC822),
-			escapeStringForQuery(listing.URL),
-			escapeStringForQuery(listing.Address),
-			listing.Price,
-			escapeStringForQuery(listing.Description),
-			escapeStringForQuery(listing.ZipCode),
-			listing.BuildYear,
-			listing.TotalSize,
-			listing.LivingSize,
-			escapeStringForQuery(listing.HouseType),
-			escapeStringForQuery(listing.BuildingType),
-			listing.NumRooms,
-			listing.NumBedrooms),
-		)
-		if err != nil {
-			return err
-		}
+	copyCount, err := conn.CopyFrom(
+		context.TODO(),
+		pgx.Identifier{"funda_houses"},
+		[]string{"time_seen", "link", "house_address", "price", "house_description", "zip_code", "built_year", "total_size", "living_size", "house_type", "building_type", "num_rooms", "num_bedrooms"},
+		pgx.CopyFromSlice(len(listings), func(i int) ([]any, error) {
+			return []any{
+				time.Now().UTC(),
+				escapeStringForQuery(listings[i].URL),
+				escapeStringForQuery(listings[i].Address),
+				listings[i].Price,
+				escapeStringForQuery(listings[i].Description),
+				escapeStringForQuery(listings[i].ZipCode),
+				listings[i].BuildYear,
+				listings[i].TotalSize,
+				listings[i].LivingSize,
+				escapeStringForQuery(listings[i].HouseType),
+				escapeStringForQuery(listings[i].BuildingType),
+				listings[i].NumRooms,
+				listings[i].NumBedrooms,
+			}, nil
+		}),
+	)
 
-		err = tx.Commit(context.Background())
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return int(copyCount), err
 }
 
 func (d Database) connect() (*pgx.Conn, error) {
-	return pgx.Connect(context.Background(), getDatabaseURL(d.config.user, d.config.password, d.config.host, d.config.name, d.config.port))
+	return pgx.Connect(context.TODO(), getDatabaseURL(d.config.user, d.config.password, d.config.host, d.config.name, d.config.port))
 }
 
 func getDatabaseURL(user, password, host, name string, port int) string {
