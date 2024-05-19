@@ -7,7 +7,7 @@ require (
 	github.com/gocolly/colly v1.2.0
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/jasonlvhit/gocron v0.0.1
-	github.com/naoina/toml v0.1.1
+	github.com/joho/godotenv v1.5.1
 	github.com/urfave/cli/v2 v2.27.1
 )
 
@@ -25,8 +25,6 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
-	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/naoina/go-stringutil v0.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect

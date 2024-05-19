@@ -8,14 +8,15 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/kevslinger/funda-scraper/config"
 	"github.com/kevslinger/funda-scraper/scraper"
 )
 
 type Database struct {
-	config Config
+	config config.DatabaseConfig
 }
 
-func New(config Config) Database {
+func New(config config.DatabaseConfig) Database {
 	return Database{
 		config: config,
 	}
@@ -61,7 +62,6 @@ func (d Database) SelectHouseWithAddress(address string) (string, error) {
 }
 
 func (d Database) InsertListings(listings []scraper.FundaListing) (int, error) {
-	// TODO: Try CopyFrom https://github.com/jackc/pgx/blob/v5.5.5/copy_from.go#L265
 	conn, err := d.connect()
 	if err != nil {
 		return 0, err
@@ -95,7 +95,7 @@ func (d Database) InsertListings(listings []scraper.FundaListing) (int, error) {
 }
 
 func (d Database) connect() (*pgx.Conn, error) {
-	return pgx.Connect(context.TODO(), getDatabaseURL(d.config.user, d.config.password, d.config.host, d.config.name, d.config.port))
+	return pgx.Connect(context.TODO(), getDatabaseURL(d.config.User, d.config.Password, d.config.Host, d.config.Name, d.config.Port))
 }
 
 func getDatabaseURL(user, password, host, name string, port int) string {

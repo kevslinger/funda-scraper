@@ -1,11 +1,13 @@
 package alerter
 
+import "github.com/kevslinger/funda-scraper/config"
+
 type Alerter struct {
 	discord          *DiscordBot
 	discordChannelID string
 }
 
-func New(config Config) (*Alerter, error) {
+func New(config config.AlerterConfig) (*Alerter, error) {
 	discord, err := NewDiscordBot(config.DiscordAuthenticationToken)
 	if err != nil {
 		return nil, err

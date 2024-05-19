@@ -22,6 +22,9 @@ The code will contain the following components:
 
 The user may specify the criteria they are looking for as if they were on the Funda website.
 Examples include whether they want to rent or to buy, which area(s) they are looking for, the min and/or max price they are willing to pay, the min and/or max size they are looking for, number of (bed)rooms, etc.
+This can be done both via the command line or via a `.env` file.
+Note: Via command line the flags are hypenated and lowercase, via `.env` file the flags are underscored and uppercase.
+In either case, there is no need to rebuild the program to change the configuration parameters.
 
 ## Funda Scraper
 

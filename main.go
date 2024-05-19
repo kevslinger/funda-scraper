@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/jasonlvhit/gocron"
+	"github.com/joho/godotenv"
 	"github.com/kevslinger/funda-scraper/alerter"
 	"github.com/kevslinger/funda-scraper/config"
 	"github.com/kevslinger/funda-scraper/database"
@@ -14,6 +15,10 @@ import (
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		slog.Error("Error loading .env file", "err", err)
+	}
 	app := &cli.App{
 		Flags:  getFlags(),
 		Action: daemon,
@@ -26,16 +31,16 @@ func main() {
 }
 
 func daemon(ctx *cli.Context) error {
-	config := config.LoadConfig(ctx)
-	fundaScraper := scraper.New(*config.ScraperConfig, &http.Client{})
-	db := database.New(*config.DatabaseConfig)
-	alerts, err := alerter.New(alerter.Config{DiscordAuthenticationToken: config.AlerterConfig.DiscordAuthenticationToken, DiscordChannelID: config.AlerterConfig.DiscordChannelID})
+	c := config.LoadConfig(ctx)
+	fundaScraper := scraper.New(*c.ScraperConfig, &http.Client{})
+	db := database.New(*c.DatabaseConfig)
+	alerts, err := alerter.New(*c.AlerterConfig)
 	if err != nil {
 		return err
 	}
 
-	slog.Info("Starting funda-scraper! New houses will be scraper every", "minutes", config.GeneralConfig.ScrapeFrequency)
-	gocron.Every(config.GeneralConfig.ScrapeFrequency).Minutes().Do(scrapeFunda, fundaScraper, db, alerts, config)
+	slog.Info("Starting funda-scraper! New houses will be scraped every", "minutes", c.GeneralConfig.ScrapeFrequency)
+	gocron.Every(uint64(c.GeneralConfig.ScrapeFrequency)).Minutes().Do(scrapeFunda, fundaScraper, db, alerts, c)
 	<-gocron.Start()
 	return nil
 }
@@ -71,9 +76,9 @@ func scrapeFunda(fundaScraper *scraper.Scraper, db database.Database, alerts *al
 
 func getFlags() []cli.Flag {
 	var flags []cli.Flag
-	flags = append(scraper.Flags, config.Flags...)
-	flags = append(flags, alerter.Flags...)
-	flags = append(flags, database.Flags...)
+	flags = append(config.ScraperFlags, config.GeneralFlags...)
+	flags = append(flags, config.AlerterFlags...)
+	flags = append(flags, config.DatabaseFlags...)
 	return flags
 }
 

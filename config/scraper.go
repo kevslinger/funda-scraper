@@ -1,46 +1,46 @@
-package scraper
+package config
 
 import (
 	"github.com/urfave/cli/v2"
 )
 
-type Config struct {
-	headers            map[string][]string
-	baseUrl            string
-	koopOrHuur         string
-	area               []string
-	minPrice           int
-	maxPrice           int
-	minLivingArea      int
-	maxLivingArea      int
-	minPlotArea        int
-	maxPlotArea        int
-	minRooms           int
-	maxRooms           int
-	minBedrooms        int
-	maxBedrooms        int
-	energyLabel        []string
-	outdoorAmenities   []string
-	gardenDirection    []string
-	gardenMinSpace     int
-	gardenMaxSpace     int
-	buildingType       []string
-	zoning             []string
-	constructionPeriod []string
-	surroundings       []string
-	garage             []string
-	minGarageCapacity  int
-	maxGarageCapacity  int
-	characteristics    []string
-	display            []string
-	openHouse          []string
+type ScraperConfig struct {
+	Headers            map[string][]string
+	BaseUrl            string
+	KoopOrHuur         string
+	Area               []string
+	MinPrice           int
+	MaxPrice           int
+	MinLivingArea      int
+	MaxLivingArea      int
+	MinPlotArea        int
+	MaxPlotArea        int
+	MinRooms           int
+	MaxRooms           int
+	MinBedrooms        int
+	MaxBedrooms        int
+	EnergyLabel        []string
+	OutdoorAmenities   []string
+	GardenDirection    []string
+	GardenMinSpace     int
+	GardenMaxSpace     int
+	BuildingType       []string
+	Zoning             []string
+	ConstructionPeriod []string
+	Surroundings       []string
+	Garage             []string
+	MinGarageCapacity  int
+	MaxGarageCapacity  int
+	Characteristics    []string
+	Display            []string
+	OpenHouse          []string
 }
 
 const (
 	defaultBaseUrl         = "https://www.funda.nl/zoeken"
 	koopOrHuurFlag         = "koop-or-huur"
 	baseUrlFlag            = "base-url"
-	areaFlag               = "area"
+	areaFlag               = "house-area"
 	minPriceFlag           = "min-price"
 	maxPriceFlag           = "max-price"
 	minLivingAreaFlag      = "min-living-area"
@@ -57,26 +57,26 @@ const (
 	gardenMinSpaceFlag     = "garden-min-space"
 	gardenMaxSpaceFlag     = "garden-max-space"
 	buildingTypeFlag       = "building-type"
-	zoningFlag             = "zoning"
+	zoningFlag             = "house-zoning"
 	constructionPeriodFlag = "construction-period"
 	surroundingsFlag       = "surroundings"
-	garageFlag             = "garage"
+	garageFlag             = "house-garage"
 	minGarageCapacityFlag  = "min-garage-capacity"
 	maxGarageCapacityFlag  = "max-garage-capacity"
 	characteristicsFlag    = "characteristics"
-	displayFlag            = "display"
+	displayFlag            = "house-display"
 	openHouseFlag          = "open-house"
 )
 
-var Defaults *Config = &Config{
-	headers:    map[string][]string{"user-agent": {"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36"}},
-	baseUrl:    defaultBaseUrl,
-	koopOrHuur: "koop",
-	area:       []string{"nl"},
+var ScraperDefaults *ScraperConfig = &ScraperConfig{
+	Headers:    map[string][]string{"user-agent": {"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36"}},
+	BaseUrl:    defaultBaseUrl,
+	KoopOrHuur: "koop",
+	Area:       []string{"nl"},
 }
 
 // TODO: Translate the options to those used in the URL
-var Flags []cli.Flag = []cli.Flag{
+var ScraperFlags []cli.Flag = []cli.Flag{
 	&cli.StringFlag{
 		Name:  baseUrlFlag,
 		Value: defaultBaseUrl,
@@ -193,91 +193,121 @@ var Flags []cli.Flag = []cli.Flag{
 	},
 }
 
-func LoadConfig(ctx *cli.Context) *Config {
-	config := Defaults
+func LoadScraperConfig(ctx *cli.Context) *ScraperConfig {
+	c := ScraperDefaults
+	// Set ENV vars before command-line flags
+	readStringFromEnv(baseUrlFlag, &c.BaseUrl)
+	readStringFromEnv(koopOrHuurFlag, &c.KoopOrHuur)
+	readStringSliceFromEnv(areaFlag, &c.Area)
+	readIntFromEnv(minPriceFlag, &c.MinPrice)
+	readIntFromEnv(maxPriceFlag, &c.MaxPrice)
+	readIntFromEnv(minLivingAreaFlag, &c.MinLivingArea)
+	readIntFromEnv(maxLivingAreaFlag, &c.MaxLivingArea)
+	readIntFromEnv(minPlotAreaFlag, &c.MinPlotArea)
+	readIntFromEnv(maxPlotAreaFlag, &c.MaxPlotArea)
+	readIntFromEnv(minRoomsFlag, &c.MinRooms)
+	readIntFromEnv(maxRoomsFlag, &c.MaxRooms)
+	readIntFromEnv(minBedroomsFlag, &c.MinBedrooms)
+	readIntFromEnv(maxBedroomsFlag, &c.MaxBedrooms)
+	readStringSliceFromEnv(energyLabelFlag, &c.EnergyLabel)
+	readStringSliceFromEnv(outdooramenitiesFlag, &c.OutdoorAmenities)
+	readStringSliceFromEnv(gardenDirectionFlag, &c.GardenDirection)
+	readIntFromEnv(gardenMinSpaceFlag, &c.GardenMinSpace)
+	readIntFromEnv(gardenMaxSpaceFlag, &c.GardenMaxSpace)
+	readStringSliceFromEnv(buildingTypeFlag, &c.BuildingType)
+	readStringSliceFromEnv(zoningFlag, &c.Zoning)
+	readStringSliceFromEnv(constructionPeriodFlag, &c.ConstructionPeriod)
+	readStringSliceFromEnv(surroundingsFlag, &c.Surroundings)
+	readStringSliceFromEnv(garageFlag, &c.Garage)
+	readIntFromEnv(minGarageCapacityFlag, &c.MinGarageCapacity)
+	readIntFromEnv(maxGarageCapacityFlag, &c.MaxGarageCapacity)
+	readStringSliceFromEnv(characteristicsFlag, &c.Characteristics)
+	readStringSliceFromEnv(displayFlag, &c.Display)
+	readStringSliceFromEnv(openHouseFlag, &c.OpenHouse)
+
 	if ctx.IsSet(baseUrlFlag) {
-		config.baseUrl = ctx.String(baseUrlFlag)
+		c.BaseUrl = ctx.String(baseUrlFlag)
 	}
 	if ctx.IsSet(koopOrHuurFlag) {
-		config.koopOrHuur = ctx.String(koopOrHuurFlag)
+		c.KoopOrHuur = ctx.String(koopOrHuurFlag)
 	}
 	if ctx.IsSet(areaFlag) {
-		config.area = ctx.StringSlice(areaFlag)
+		c.Area = ctx.StringSlice(areaFlag)
 	}
 	if ctx.IsSet(minPriceFlag) {
-		config.minPrice = ctx.Int(minPriceFlag)
+		c.MinPrice = ctx.Int(minPriceFlag)
 	}
 	if ctx.IsSet(maxPriceFlag) {
-		config.maxPrice = ctx.Int(maxPriceFlag)
+		c.MaxPrice = ctx.Int(maxPriceFlag)
 	}
 	if ctx.IsSet(minLivingAreaFlag) {
-		config.minLivingArea = ctx.Int(minLivingAreaFlag)
+		c.MinLivingArea = ctx.Int(minLivingAreaFlag)
 	}
 	if ctx.IsSet(maxLivingAreaFlag) {
-		config.maxLivingArea = ctx.Int(maxLivingAreaFlag)
+		c.MaxLivingArea = ctx.Int(maxLivingAreaFlag)
 	}
 	if ctx.IsSet(minPlotAreaFlag) {
-		config.minPlotArea = ctx.Int(minPlotAreaFlag)
+		c.MinPlotArea = ctx.Int(minPlotAreaFlag)
 	}
 	if ctx.IsSet(maxPlotAreaFlag) {
-		config.maxPlotArea = ctx.Int(maxPlotAreaFlag)
+		c.MaxPlotArea = ctx.Int(maxPlotAreaFlag)
 	}
 	if ctx.IsSet(minRoomsFlag) {
-		config.minRooms = ctx.Int(minRoomsFlag)
+		c.MinRooms = ctx.Int(minRoomsFlag)
 	}
 	if ctx.IsSet(maxRoomsFlag) {
-		config.maxRooms = ctx.Int(maxRoomsFlag)
+		c.MaxRooms = ctx.Int(maxRoomsFlag)
 	}
 	if ctx.IsSet(minBedroomsFlag) {
-		config.minBedrooms = ctx.Int(minBedroomsFlag)
+		c.MinBedrooms = ctx.Int(minBedroomsFlag)
 	}
 	if ctx.IsSet(maxBedroomsFlag) {
-		config.maxBedrooms = ctx.Int(maxBedroomsFlag)
+		c.MaxBedrooms = ctx.Int(maxBedroomsFlag)
 	}
 	if ctx.IsSet(energyLabelFlag) {
-		config.energyLabel = ctx.StringSlice(energyLabelFlag)
+		c.EnergyLabel = ctx.StringSlice(energyLabelFlag)
 	}
 	if ctx.IsSet(outdooramenitiesFlag) {
-		config.outdoorAmenities = ctx.StringSlice(outdooramenitiesFlag)
+		c.OutdoorAmenities = ctx.StringSlice(outdooramenitiesFlag)
 	}
 	if ctx.IsSet(gardenDirectionFlag) {
-		config.gardenDirection = ctx.StringSlice(gardenDirectionFlag)
+		c.GardenDirection = ctx.StringSlice(gardenDirectionFlag)
 	}
 	if ctx.IsSet(gardenMinSpaceFlag) {
-		config.gardenMinSpace = ctx.Int(gardenMinSpaceFlag)
+		c.GardenMinSpace = ctx.Int(gardenMinSpaceFlag)
 	}
 	if ctx.IsSet(gardenMaxSpaceFlag) {
-		config.gardenMaxSpace = ctx.Int(gardenMaxSpaceFlag)
+		c.GardenMaxSpace = ctx.Int(gardenMaxSpaceFlag)
 	}
 	if ctx.IsSet(buildingTypeFlag) {
-		config.buildingType = ctx.StringSlice(buildingTypeFlag)
+		c.BuildingType = ctx.StringSlice(buildingTypeFlag)
 	}
 	if ctx.IsSet(zoningFlag) {
-		config.zoning = ctx.StringSlice(zoningFlag)
+		c.Zoning = ctx.StringSlice(zoningFlag)
 	}
 	if ctx.IsSet(constructionPeriodFlag) {
-		config.constructionPeriod = ctx.StringSlice(constructionPeriodFlag)
+		c.ConstructionPeriod = ctx.StringSlice(constructionPeriodFlag)
 	}
 	if ctx.IsSet(surroundingsFlag) {
-		config.surroundings = ctx.StringSlice(surroundingsFlag)
+		c.Surroundings = ctx.StringSlice(surroundingsFlag)
 	}
 	if ctx.IsSet(garageFlag) {
-		config.garage = ctx.StringSlice(garageFlag)
+		c.Garage = ctx.StringSlice(garageFlag)
 	}
 	if ctx.IsSet(minGarageCapacityFlag) {
-		config.minGarageCapacity = ctx.Int(minGarageCapacityFlag)
+		c.MinGarageCapacity = ctx.Int(minGarageCapacityFlag)
 	}
 	if ctx.IsSet(maxGarageCapacityFlag) {
-		config.maxGarageCapacity = ctx.Int(maxGarageCapacityFlag)
+		c.MaxGarageCapacity = ctx.Int(maxGarageCapacityFlag)
 	}
 	if ctx.IsSet(characteristicsFlag) {
-		config.characteristics = ctx.StringSlice(characteristicsFlag)
+		c.Characteristics = ctx.StringSlice(characteristicsFlag)
 	}
 	if ctx.IsSet(displayFlag) {
-		config.display = ctx.StringSlice(displayFlag)
+		c.Display = ctx.StringSlice(displayFlag)
 	}
 	if ctx.IsSet(openHouseFlag) {
-		config.openHouse = ctx.StringSlice(openHouseFlag)
+		c.OpenHouse = ctx.StringSlice(openHouseFlag)
 	}
-	return config
+	return c
 }

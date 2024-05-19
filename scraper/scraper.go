@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/gocolly/colly"
+	"github.com/kevslinger/funda-scraper/config"
 )
 
 var (
@@ -21,11 +22,12 @@ var (
 type Scraper struct {
 	client    *http.Client
 	collector *colly.Collector
-	config    Config
+	config    config.ScraperConfig
 }
 
-func New(config Config, client *http.Client) *Scraper {
+func New(config config.ScraperConfig, client *http.Client) *Scraper {
 	collector := colly.NewCollector()
+	collector.AllowURLRevisit = true
 	scraper := &Scraper{
 		client:    client,
 		collector: collector,
@@ -97,30 +99,30 @@ func (s Scraper) GetListingUrls(requestType string, body io.Reader) ([]string, e
 }
 
 func (s Scraper) configureUrl() (string, error) {
-	path, err := url.JoinPath(s.config.baseUrl, s.config.koopOrHuur)
+	path, err := url.JoinPath(s.config.BaseUrl, s.config.KoopOrHuur)
 	if err != nil {
-		return "", fmt.Errorf("error joining paths %s and %s: %e", s.config.baseUrl, s.config.koopOrHuur, err)
+		return "", fmt.Errorf("error joining paths %s and %s: %e", s.config.BaseUrl, s.config.KoopOrHuur, err)
 	}
 	path += "?"
-	path += s.getPathComponentForStringSlice(s.config.area, "selected_area")
-	path += s.getPathComponentForIntRange(s.config.minPrice, s.config.maxPrice, "&price")
-	path += s.getPathComponentForIntRange(s.config.minLivingArea, s.config.maxLivingArea, "&floor_area")
-	path += s.getPathComponentForIntRange(s.config.minPlotArea, s.config.maxPlotArea, "&plot_area")
-	path += s.getPathComponentForIntRange(s.config.minRooms, s.config.maxRooms, "&rooms")
-	path += s.getPathComponentForIntRange(s.config.minBedrooms, s.config.maxBedrooms, "&bedrooms")
-	path += s.getPathComponentForStringSlice(s.config.energyLabel, "&energy_label")
-	path += s.getPathComponentForStringSlice(s.config.outdoorAmenities, "&exterior_space_type")
-	path += s.getPathComponentForStringSlice(s.config.gardenDirection, "&exterior_space_garden_orientation")
-	path += s.getPathComponentForIntRange(s.config.gardenMinSpace, s.config.gardenMaxSpace, "&exterior_space_garden_size")
-	path += s.getPathComponentForStringSlice(s.config.buildingType, "&construction_type")
-	path += s.getPathComponentForStringSlice(s.config.zoning, "zoning")
-	path += s.getPathComponentForStringSlice(s.config.constructionPeriod, "&construction_period")
-	path += s.getPathComponentForStringSlice(s.config.surroundings, "&surrounding")
-	path += s.getPathComponentForStringSlice(s.config.garage, "&garage_type")
-	path += s.getPathComponentForIntRange(s.config.minGarageCapacity, s.config.maxGarageCapacity, "&garage_capacity")
-	path += s.getPathComponentForStringSlice(s.config.characteristics, "&amenities")
-	path += s.getPathComponentForStringSlice(s.config.display, "&type")
-	path += s.getPathComponentForStringSlice(s.config.openHouse, "&open_house")
+	path += s.getPathComponentForStringSlice(s.config.Area, "selected_area")
+	path += s.getPathComponentForIntRange(s.config.MinPrice, s.config.MaxPrice, "&price")
+	path += s.getPathComponentForIntRange(s.config.MinLivingArea, s.config.MaxLivingArea, "&floor_area")
+	path += s.getPathComponentForIntRange(s.config.MinPlotArea, s.config.MaxPlotArea, "&plot_area")
+	path += s.getPathComponentForIntRange(s.config.MinRooms, s.config.MaxRooms, "&rooms")
+	path += s.getPathComponentForIntRange(s.config.MinBedrooms, s.config.MaxBedrooms, "&bedrooms")
+	path += s.getPathComponentForStringSlice(s.config.EnergyLabel, "&energy_label")
+	path += s.getPathComponentForStringSlice(s.config.OutdoorAmenities, "&exterior_space_type")
+	path += s.getPathComponentForStringSlice(s.config.GardenDirection, "&exterior_space_garden_orientation")
+	path += s.getPathComponentForIntRange(s.config.GardenMinSpace, s.config.GardenMaxSpace, "&exterior_space_garden_size")
+	path += s.getPathComponentForStringSlice(s.config.BuildingType, "&construction_type")
+	path += s.getPathComponentForStringSlice(s.config.Zoning, "zoning")
+	path += s.getPathComponentForStringSlice(s.config.ConstructionPeriod, "&construction_period")
+	path += s.getPathComponentForStringSlice(s.config.Surroundings, "&surrounding")
+	path += s.getPathComponentForStringSlice(s.config.Garage, "&garage_type")
+	path += s.getPathComponentForIntRange(s.config.MinGarageCapacity, s.config.MaxGarageCapacity, "&garage_capacity")
+	path += s.getPathComponentForStringSlice(s.config.Characteristics, "&amenities")
+	path += s.getPathComponentForStringSlice(s.config.Display, "&type")
+	path += s.getPathComponentForStringSlice(s.config.OpenHouse, "&open_house")
 
 	// TODO: Choose other sort methods?
 	path += "&sort=\"date_down\""
