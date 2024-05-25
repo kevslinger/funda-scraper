@@ -1,1 +1,1 @@
-worker: funda-scraper
+worker: go build && ./funda-scraper
