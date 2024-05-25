@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jasonlvhit/gocron"
 	"github.com/joho/godotenv"
 	"github.com/kevslinger/funda-scraper/alerter"
 	"github.com/kevslinger/funda-scraper/config"
@@ -41,9 +40,11 @@ func daemon(ctx *cli.Context) error {
 		return err
 	}
 
-	slog.Info("Starting funda-scraper! New houses will be scraped every", "minutes", c.GeneralConfig.ScrapeFrequency)
-	gocron.Every(uint64(c.GeneralConfig.ScrapeFrequency)).Minutes().Do(scrapeFunda, fundaScraper, db, alerts, c)
-	<-gocron.Start()
+	// slog.Info("Starting funda-scraper! New houses will be scraped every", "minutes", c.GeneralConfig.ScrapeFrequency)
+	// gocron.Every(uint64(c.GeneralConfig.ScrapeFrequency)).Minutes().Do(scrapeFunda, fundaScraper, db, alerts, c)
+	// <-gocron.Start()
+	slog.Info("Running funda-scraper!")
+	scrapeFunda(fundaScraper, db, alerts, c)
 	return nil
 }
 
