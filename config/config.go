@@ -10,26 +10,36 @@ import (
 )
 
 const (
-	numHousesFlag       = "num-houses-limit"
-	scrapeFrequencyFlag = "scrape-frequency-minutes"
+	numHousesFlag         = "num-houses-limit"
+	scrapeFrequencyFlag   = "scrape-frequency-minutes"
+	houseLookbackDaysFlag = "house-lookback-days"
 )
 
 var GeneralFlags []cli.Flag = []cli.Flag{
 	&cli.IntFlag{
 		Name:  numHousesFlag,
-		Usage: "The number of new houses to receive on each update",
-		Value: 10,
+		Usage: "The number of new houses to receive on each update. Use -1 to receive all new houses on each update",
+		Value: -1,
 	},
 	&cli.IntFlag{
 		Name:  scrapeFrequencyFlag,
 		Usage: "The number of minutes in between scheduling the scraper and alerter to run",
 		Value: 60,
 	},
+	&cli.IntFlag{
+		Name:  houseLookbackDaysFlag,
+		Usage: "The number of days between seeing a house where we consider it new. Use -1 to avoid considering the same house twice",
+		Value: 30,
+	},
 }
 
 type GeneralConfig struct {
-	NumHousesLimit  int
+	// Maximum number of houses to update on each scrape
+	NumHousesLimit int
+	// How often to scrape (in minutes)
 	ScrapeFrequency int
+	// How many days until the same listed house is considered newly seen
+	HouseLookbackDays int
 }
 
 var Defaults *GeneralConfig = &GeneralConfig{}
@@ -55,12 +65,16 @@ func loadConfig(ctx *cli.Context) *GeneralConfig {
 	// Use ENV vars which get overriden if the flags are present
 	readIntFromEnv(numHousesFlag, &c.NumHousesLimit)
 	readIntFromEnv(scrapeFrequencyFlag, &c.ScrapeFrequency)
+	readIntFromEnv(houseLookbackDaysFlag, &c.HouseLookbackDays)
 	// Overwrite ENV vars on command-line
 	if ctx.IsSet(numHousesFlag) {
 		c.NumHousesLimit = ctx.Int(numHousesFlag)
 	}
 	if ctx.IsSet(scrapeFrequencyFlag) {
 		c.ScrapeFrequency = ctx.Int(scrapeFrequencyFlag)
+	}
+	if ctx.IsSet(houseLookbackDaysFlag) {
+		c.HouseLookbackDays = ctx.Int(houseLookbackDaysFlag)
 	}
 	return c
 }

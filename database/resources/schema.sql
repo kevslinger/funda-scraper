@@ -1,8 +1,8 @@
 CREATE TABLE funda_houses (
     time_seen           TIMESTAMP,
-    link                TEXT PRIMARY KEY,
+    link                TEXT,
     house_id            INT,
-    house_address       VARCHAR(256),
+    house_address       VARCHAR(256) PRIMARY KEY,
     price               INT,
     house_description   TEXT,
     listed_since        TIMESTAMP,

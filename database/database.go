@@ -49,6 +49,18 @@ func (d Database) SelectHouseWithLink(link string) (string, error) {
 	return foundLink, err
 }
 
+func (d Database) SelectRecentHouseWithAddress(address string, lookbackDays int) (string, error) {
+	conn, err := d.connect()
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close(context.TODO())
+
+	var foundAddress string
+	err = conn.QueryRow(context.TODO(), "SELECT house_address from funda_houses WHERE house_address=$1 AND time_seen >= $2", address, time.Now().UTC().Add(-time.Duration(lookbackDays)*time.Hour*24).Format("2006-01-02")).Scan(&foundAddress)
+	return foundAddress, err
+}
+
 func (d Database) SelectHouseWithAddress(address string) (string, error) {
 	conn, err := d.connect()
 	if err != nil {
@@ -92,6 +104,27 @@ func (d Database) InsertListings(listings []scraper.FundaListing) (int, error) {
 	)
 
 	return int(copyCount), err
+}
+
+// TODO: Create a batch of update queries and then execute them simultaneously?
+func (d Database) UpdateListings(listings []scraper.FundaListing) (int, error) {
+	conn, err := d.connect()
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Close(context.TODO())
+
+	var numUpdatedListings int
+	for _, listing := range listings {
+		resp, err := conn.Exec(context.TODO(), "UPDATE funda_houses SET (time_seen, link, price, house_description, zip_code, built_year, total_size, living_size, house_type, building_type, num_rooms, num_bedrooms) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", time.Now().UTC(), listing.URL, listing.Price, listing.Description, listing.ZipCode, listing.BuildYear, listing.TotalSize, listing.LivingSize, listing.HouseType, listing.BuildingType, listing.NumRooms, listing.NumBedrooms)
+		slog.Info("Got response from Postgres", "resp", resp, "err", err)
+		if err != nil {
+			slog.Warn("Error updating listing in DB", "err", err)
+			continue
+		}
+		numUpdatedListings++
+	}
+	return numUpdatedListings, err
 }
 
 func (d Database) connect() (*pgx.Conn, error) {

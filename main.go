@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jasonlvhit/gocron"
 	"github.com/joho/godotenv"
 	"github.com/kevslinger/funda-scraper/alerter"
@@ -52,25 +54,31 @@ func scrapeFunda(fundaScraper *scraper.Scraper, db database.Database, alerts *al
 		return err
 	}
 	slog.Info("Got listing URLs", "URLs", urls)
-	fundaListings := getNewFundaListings(fundaScraper, db, urls)
-	if len(fundaListings) == 0 {
+	newListings, listingsToReplace := getNewFundaListings(fundaScraper, db, urls, config.GeneralConfig.HouseLookbackDays)
+	allListings := append(newListings, listingsToReplace...)
+	if len(allListings) == 0 {
 		slog.Warn("No new houses")
 		return nil
 	} else {
-		slog.Info("Found new houses", "num", len(fundaListings))
+		slog.Info("Found new houses", "numNew", len(newListings), "numToUpdate", len(listingsToReplace))
 	}
 
-	rowsInserted, err := db.InsertListings(fundaListings)
+	rowsInserted, err := db.InsertListings(newListings)
 	if err != nil {
 		slog.Warn("Error inserting listings", "err", err)
 	} else {
 		slog.Info("Committed new listings to DB", "numNewListings", rowsInserted)
 	}
-
-	for _, listing := range fundaListings[:config.GeneralConfig.NumHousesLimit] {
-		alerts.Alert("Found a new house at " + listing.Address + ": " + listing.URL)
+	rowsUpdated, err := db.UpdateListings(listingsToReplace)
+	if err != nil {
+		slog.Warn("Error updating listings", "err", err)
+	} else {
+		slog.Info("Updating listings in DB", "numUpdatedListings", rowsUpdated)
 	}
 
+	for _, listing := range allListings[:config.GeneralConfig.NumHousesLimit] {
+		alerts.Alert("Found a new house at " + listing.Address + ": " + listing.URL)
+	}
 	return err
 }
 
@@ -82,22 +90,41 @@ func getFlags() []cli.Flag {
 	return flags
 }
 
-func getNewFundaListings(fundaScraper *scraper.Scraper, db database.Database, urls []string) []scraper.FundaListing {
-	var fundaListings []scraper.FundaListing
+// getNewFundaListings takes a slice of funda URLs and returns a slice of funda listings. If lookbackDays is provided
+// it will separate between listings that haven't been seen before, and those that have been (but longer than lookbackDays ago)
+func getNewFundaListings(fundaScraper *scraper.Scraper, db database.Database, urls []string, lookbackDays int) ([]scraper.FundaListing, []scraper.FundaListing) {
+	var listingsToReplace, newListings []scraper.FundaListing
+	// TODO: Should I batch these queries?
 	for _, url := range urls {
 		fundaListing, err := fundaScraper.GetFundaListingFromUrl(url)
 		if err != nil {
 			slog.Warn("Error getting funda listing for house", "url", url, "err", err)
 			continue
 		}
-		// TODO: Have some sort of time limit?
-		alreadyPresent, err := db.SelectHouseWithAddress(fundaListing.Address)
-		if err != nil {
-			slog.Warn("Error selecting house with address", "err", err)
+		listingFoundInDb, err := db.SelectHouseWithAddress(fundaListing.Address)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			slog.Warn("Error selecting house with address", "addr", fundaListing.Address, "err", err)
+			continue
 		}
-		if alreadyPresent == "" {
-			fundaListings = append(fundaListings, fundaListing)
+		// Lookback days turned off -- only care if we found the house at some point
+		if lookbackDays < 0 {
+			if errors.Is(err, pgx.ErrNoRows) {
+				newListings = append(newListings, fundaListing)
+			}
+		} else {
+			listingFoundRecently, err := db.SelectRecentHouseWithAddress(fundaListing.Address, lookbackDays)
+			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+				slog.Warn("Error selecting house with address", "addr", fundaListing.Address, "err", err)
+				continue
+			} // Case 1: Not found in db at all
+			if listingFoundRecently == "" && listingFoundInDb == "" {
+				newListings = append(newListings, fundaListing)
+				// Case 2: Found in DB but not recently
+			} else if listingFoundRecently == "" && listingFoundInDb != "" {
+				listingsToReplace = append(listingsToReplace, fundaListing)
+			}
+			// Case 3: Found in DB recently -- no action required
 		}
 	}
-	return fundaListings
+	return newListings, listingsToReplace
 }
