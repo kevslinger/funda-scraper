@@ -40,6 +40,7 @@ func New(config config.ScraperConfig, client *http.Client) *Scraper {
 	})
 
 	scraper.collector.OnHTML("script", func(e *colly.HTMLElement) {
+		slog.Info("Got response", "resp", e.Text)
 		// Marshal the json into a generic map
 		result := make(map[string]any)
 		json.Unmarshal([]byte(e.Text), &result)
@@ -48,6 +49,7 @@ func New(config config.ScraperConfig, client *http.Client) *Scraper {
 		// TODO: Can we use that fact to make an easier filter?
 		elem, ok := result["itemListElement"]
 		if !ok {
+			slog.Warn("Not ok - result[itemListElement]", "elem", elem)
 			return
 		}
 		// TODO: Don't use Fatalf, just print a warning and return
@@ -65,6 +67,7 @@ func New(config config.ScraperConfig, client *http.Client) *Scraper {
 			}
 			url, ok := eMap["url"]
 			if !ok {
+				slog.Warn("Not ok - eMap[url]", "url", url)
 				return
 			}
 			urlQueue = append(urlQueue, url.(string))
