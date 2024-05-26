@@ -34,7 +34,7 @@ func New(config config.ScraperConfig, client *http.Client) *Scraper {
 		config:    config,
 	}
 	collector.OnRequest(func(r *colly.Request) {
-		r.Headers.Set("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36")
+		r.Headers.Set("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36")
 		recentListing = &FundaListing{}
 		urlQueue = make([]string, 0)
 	})
