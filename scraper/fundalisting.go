@@ -7,7 +7,7 @@ type FundaListing struct {
 	Price                int
 	Description          string
 	ListedSince          string // TODO: Timestamp?
-	ZipCode              string
+	Postcode             string
 	BuildYear            int
 	TotalSize            int
 	LivingSize           int

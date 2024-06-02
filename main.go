@@ -5,8 +5,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jasonlvhit/gocron"
 	"github.com/joho/godotenv"
 	"github.com/kevslinger/funda-scraper/alerter"
 	"github.com/kevslinger/funda-scraper/config"
@@ -40,11 +42,11 @@ func daemon(ctx *cli.Context) error {
 		return err
 	}
 
-	// slog.Info("Starting funda-scraper! New houses will be scraped every", "minutes", c.GeneralConfig.ScrapeFrequency)
-	// gocron.Every(uint64(c.GeneralConfig.ScrapeFrequency)).Minutes().Do(scrapeFunda, fundaScraper, db, alerts, c)
-	// <-gocron.Start()
 	slog.Info("Running funda-scraper!")
 	scrapeFunda(fundaScraper, db, alerts, c)
+	slog.Info("Starting funda-scraper! New houses will be scraped every", "minutes", c.GeneralConfig.ScrapeFrequency)
+	gocron.Every(uint64(c.GeneralConfig.ScrapeFrequency)).Minutes().Do(scrapeFunda, fundaScraper, db, alerts, c)
+	<-gocron.Start()
 	return nil
 }
 
@@ -57,6 +59,7 @@ func scrapeFunda(fundaScraper *scraper.Scraper, db database.Database, alerts *al
 	slog.Info("Got listing URLs", "URLs", urls)
 	newListings, listingsToReplace := getNewFundaListings(fundaScraper, db, urls, config.GeneralConfig.HouseLookbackDays)
 	allListings := append(newListings, listingsToReplace...)
+	slog.Info("postcodes selected", "codes", config.ScraperConfig.Postcode)
 	if len(allListings) == 0 {
 		slog.Warn("No new houses")
 		return nil
@@ -77,8 +80,26 @@ func scrapeFunda(fundaScraper *scraper.Scraper, db database.Database, alerts *al
 		slog.Info("Updating listings in DB", "numUpdatedListings", rowsUpdated)
 	}
 
-	for _, listing := range allListings[:config.GeneralConfig.NumHousesLimit] {
-		alerts.Alert("Found a new house at " + listing.Address + ": " + listing.URL)
+	var index, numAlerted int
+	for index < len(allListings) && (numAlerted < config.GeneralConfig.NumHousesLimit || config.GeneralConfig.NumHousesLimit < 0) {
+		var shouldAlert bool
+		// Only alert houses that are in the postcodes listed, if any
+		if len(config.ScraperConfig.Postcode) > 0 {
+			listingPostcode := allListings[index].Postcode
+			for _, postcode := range config.ScraperConfig.Postcode {
+				if strings.Contains(listingPostcode, postcode) {
+					shouldAlert = true
+					break
+				}
+			}
+		} else {
+			shouldAlert = true
+		}
+		if shouldAlert {
+			alerts.Alert("Found a new house at " + allListings[index].Address + ": " + allListings[index].URL)
+			numAlerted++
+		}
+		index++
 	}
 	return err
 }
@@ -117,7 +138,8 @@ func getNewFundaListings(fundaScraper *scraper.Scraper, db database.Database, ur
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				slog.Warn("Error selecting house with address", "addr", fundaListing.Address, "err", err)
 				continue
-			} // Case 1: Not found in db at all
+			}
+			// Case 1: Not found in db at all
 			if listingFoundRecently == "" && listingFoundInDb == "" {
 				newListings = append(newListings, fundaListing)
 				// Case 2: Found in DB but not recently

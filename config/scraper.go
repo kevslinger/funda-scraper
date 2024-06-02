@@ -9,6 +9,7 @@ type ScraperConfig struct {
 	BaseUrl            string
 	KoopOrHuur         string
 	Area               []string
+	Postcode           []string
 	MinPrice           int
 	MaxPrice           int
 	MinLivingArea      int
@@ -41,6 +42,7 @@ const (
 	koopOrHuurFlag         = "koop-or-huur"
 	baseUrlFlag            = "base-url"
 	areaFlag               = "house-area"
+	postcodeFlag           = "postcode"
 	minPriceFlag           = "min-price"
 	maxPriceFlag           = "max-price"
 	minLivingAreaFlag      = "min-living-area"
@@ -90,6 +92,10 @@ var ScraperFlags []cli.Flag = []cli.Flag{
 	&cli.StringSliceFlag{
 		Name:  areaFlag,
 		Usage: "Use this to filter houses by area(s)",
+	},
+	&cli.StringSliceFlag{
+		Name:  postcodeFlag,
+		Usage: "Use this to alert only when the house is in one of the specified postal codes.",
 	},
 	&cli.IntFlag{
 		Name:  minPriceFlag,
@@ -199,6 +205,7 @@ func LoadScraperConfig(ctx *cli.Context) *ScraperConfig {
 	readStringFromEnv(baseUrlFlag, &c.BaseUrl)
 	readStringFromEnv(koopOrHuurFlag, &c.KoopOrHuur)
 	readStringSliceFromEnv(areaFlag, &c.Area)
+	readStringSliceFromEnv(postcodeFlag, &c.Postcode)
 	readIntFromEnv(minPriceFlag, &c.MinPrice)
 	readIntFromEnv(maxPriceFlag, &c.MaxPrice)
 	readIntFromEnv(minLivingAreaFlag, &c.MinLivingArea)
@@ -233,6 +240,9 @@ func LoadScraperConfig(ctx *cli.Context) *ScraperConfig {
 	}
 	if ctx.IsSet(areaFlag) {
 		c.Area = ctx.StringSlice(areaFlag)
+	}
+	if ctx.IsSet(postcodeFlag) {
+		c.Postcode = ctx.StringSlice(postcodeFlag)
 	}
 	if ctx.IsSet(minPriceFlag) {
 		c.MinPrice = ctx.Int(minPriceFlag)

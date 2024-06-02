@@ -19,17 +19,14 @@ var GeneralFlags []cli.Flag = []cli.Flag{
 	&cli.IntFlag{
 		Name:  numHousesFlag,
 		Usage: "The number of new houses to receive on each update. Use -1 to receive all new houses on each update",
-		Value: -1,
 	},
 	&cli.IntFlag{
 		Name:  scrapeFrequencyFlag,
 		Usage: "The number of minutes in between scheduling the scraper and alerter to run",
-		Value: 60,
 	},
 	&cli.IntFlag{
 		Name:  houseLookbackDaysFlag,
 		Usage: "The number of days between seeing a house where we consider it new. Use -1 to avoid considering the same house twice",
-		Value: 30,
 	},
 }
 
@@ -42,7 +39,11 @@ type GeneralConfig struct {
 	HouseLookbackDays int
 }
 
-var Defaults *GeneralConfig = &GeneralConfig{}
+var Defaults *GeneralConfig = &GeneralConfig{
+	NumHousesLimit:    -1,
+	ScrapeFrequency:   60,
+	HouseLookbackDays: 30,
+}
 
 type Config struct {
 	AlerterConfig  *AlerterConfig
@@ -82,6 +83,7 @@ func loadConfig(ctx *cli.Context) *GeneralConfig {
 // readIntFromEnv reads an ENV var into an integer, if possible
 func readIntFromEnv(flagName string, configPtr *int) {
 	if envVal, ok := os.LookupEnv(convertFlagNameToEnvVar(flagName)); ok {
+		slog.Info("Found env var", "name", flagName)
 		if envValInt, err := strconv.Atoi(envVal); err == nil {
 			*configPtr = envValInt
 		} else {

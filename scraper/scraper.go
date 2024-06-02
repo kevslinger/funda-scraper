@@ -71,17 +71,17 @@ func New(config config.ScraperConfig, client *http.Client) *Scraper {
 		}
 	})
 	scraper.collector.OnHTML("body", func(e *colly.HTMLElement) {
-		recentListing.Address = e.ChildText(".object-header__title")
-		recentListing.Price = convertStrToInt(e.ChildText(".object-header__price"))
-		recentListing.Description = e.ChildText(".object-description-body")
-		recentListing.ZipCode = e.ChildText(".object-header__subtitle")
-		recentListing.BuildYear = convertStrToInt(e.ChildText(".fd-align-items-center~ .fd-align-items-center .fd-m-right-xs"))
-		recentListing.TotalSize = convertStrToInt(e.ChildText(".fd-m-right-xl--bp-m .fd-text--nowrap"))
-		recentListing.LivingSize = convertStrToInt(e.ChildText(".object-kenmerken-list:nth-child(8) .fd-align-items-center:nth-child(2) span"))
-		recentListing.HouseType = e.ChildText(".object-kenmerken-list:nth-child(5) .fd-align-items-center:nth-child(2) span")
-		recentListing.BuildingType = e.ChildText(".object-kenmerken-list:nth-child(5) .fd-align-items-center:nth-child(4) span")
-		recentListing.NumRooms = convertStrToInt(e.ChildText(".object-kenmerken-list:nth-child(11) .fd-align-items-center:nth-child(2)"))
-		recentListing.NumBedrooms = convertStrToInt(e.ChildText(".kenmerken-highlighted__value .fd-text--nowrap"))
+		recentListing.Address = e.ChildText(".object-header__container .text-2xl")
+		recentListing.Price = convertStrToInt(e.ChildText("div.gap-2 > span:nth-child(1)"))
+		recentListing.Description = e.ChildText(".listing-description-text")
+		recentListing.Postcode = e.ChildText(".object-header__container .text-neutral-40")
+		recentListing.BuildYear = convertStrToInt(e.ChildText("section.mt-6 > div:nth-child(3) > dl:nth-child(2) > div:nth-child(3) > dd:nth-child(2) > span:nth-child(1)"))
+		recentListing.TotalSize = convertStrToInt(e.ChildText("section.mt-6 > div:nth-child(4) > dl:nth-child(2) > div:nth-child(2) > dd:nth-child(2) > span:nth-child(1)"))
+		recentListing.LivingSize = convertStrToInt(e.ChildText("section.mt-6 > div:nth-child(4) > dl:nth-child(2) > div:nth-child(1) > dd:nth-child(2) > dl:nth-child(1) > div:nth-child(1) > dd:nth-child(2)"))
+		recentListing.HouseType = e.ChildText("section.mt-6 > div:nth-child(3) > dl:nth-child(2) > div:nth-child(1) > dd:nth-child(2) > span:nth-child(1)")
+		recentListing.BuildingType = e.ChildText("section.mt-6 > div:nth-child(3) > dl:nth-child(2) > div:nth-child(2) > dd:nth-child(2) > span:nth-child(1)")
+		recentListing.NumRooms = convertStrToInt(e.ChildText("section.mt-6 > div:nth-child(5) > dl:nth-child(2) > div:nth-child(1) > dd:nth-child(2) > span:nth-child(1)"))
+		recentListing.NumBedrooms = convertStrToInt(e.ChildText("ul.mt-2 > li:nth-child(2) > span:nth-child(2)"))
 		// TODO: Add more fields
 	})
 
