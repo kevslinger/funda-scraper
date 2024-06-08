@@ -59,7 +59,6 @@ func scrapeFunda(fundaScraper *scraper.Scraper, db database.Database, alerts *al
 	slog.Info("Got listing URLs", "URLs", urls)
 	newListings, listingsToReplace := getNewFundaListings(fundaScraper, db, urls, config.GeneralConfig.HouseLookbackDays)
 	allListings := append(newListings, listingsToReplace...)
-	slog.Info("postcodes selected", "codes", config.ScraperConfig.Postcode)
 	if len(allListings) == 0 {
 		slog.Warn("No new houses")
 		return nil

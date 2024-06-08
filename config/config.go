@@ -83,7 +83,6 @@ func loadConfig(ctx *cli.Context) *GeneralConfig {
 // readIntFromEnv reads an ENV var into an integer, if possible
 func readIntFromEnv(flagName string, configPtr *int) {
 	if envVal, ok := os.LookupEnv(convertFlagNameToEnvVar(flagName)); ok {
-		slog.Info("Found env var", "name", flagName)
 		if envValInt, err := strconv.Atoi(envVal); err == nil {
 			*configPtr = envValInt
 		} else {
