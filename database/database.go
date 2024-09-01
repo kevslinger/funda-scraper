@@ -116,7 +116,7 @@ func (d Database) UpdateListings(listings []scraper.FundaListing) (int, error) {
 
 	var numUpdatedListings int
 	for _, listing := range listings {
-		resp, err := conn.Exec(context.TODO(), "UPDATE funda_houses SET (time_seen, link, price, house_description, zip_code, built_year, total_size, living_size, house_type, building_type, num_rooms, num_bedrooms) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", time.Now().UTC(), listing.URL, listing.Price, listing.Description, listing.Postcode, listing.BuildYear, listing.TotalSize, listing.LivingSize, listing.HouseType, listing.BuildingType, listing.NumRooms, listing.NumBedrooms)
+		resp, err := conn.Exec(context.TODO(), "UPDATE funda_houses SET (time_seen, link, price, house_description, zip_code, built_year, total_size, living_size, house_type, building_type, num_rooms, num_bedrooms) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) WHERE house_address = $13", time.Now().UTC(), listing.URL, listing.Price, listing.Description, listing.Postcode, listing.BuildYear, listing.TotalSize, listing.LivingSize, listing.HouseType, listing.BuildingType, listing.NumRooms, listing.NumBedrooms, listing.Address)
 		slog.Info("Got response from Postgres", "resp", resp, "err", err)
 		if err != nil {
 			slog.Warn("Error updating listing in DB", "err", err)
